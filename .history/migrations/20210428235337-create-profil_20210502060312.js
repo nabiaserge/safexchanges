@@ -12,7 +12,7 @@ module.exports = {
         allowNull: false,
         type: Sequelize.INTEGER,
         references: {
-            model: 'compte_user',
+            model: 'compte_users',
             key: 'id'
         }
       },

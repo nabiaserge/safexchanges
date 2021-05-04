@@ -11,5 +11,5 @@ exports.router = (function() {
     Routers.route('/users/me/').get(usersCtrl.getUserProfile);
     Routers.route('/users/me/').put(usersCtrl.updateUserProfile);
    
-    return Routers;
+    return apiRouter;
 })();

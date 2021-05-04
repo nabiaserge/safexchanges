@@ -172,18 +172,18 @@ module.exports = {
         var userId      = jwtUtils.getUserId(headerAuth);
 
         // Params
-        const type       = req.body.type;
-        const adress     = req.body.adress;
-        const phone      = req.body.phone;
-        const num_ref    = req.body.num_ref;
-        const num_id     = req.body.num_id;
-        const specificite= req.body.specificite;
+        var type       = req.body.type,
+        var adress     = req.body.adress,
+        var phone      = req.body.phone,
+        var num_ref    = req.body.num_ref,
+        var num_id     = req.body.num_id,
+        var specificite= req.body.specificite
 
         asyncLib.waterfall([
             function(done) {
                 models.profil.findOne({
-                    attributes: ['id','idCompt'],
-                    where: { idCompt: userId },
+                    attributes: ['id', 'bio'],
+                    where: { id: userId },
                     include: [
                         {model:compte_user, attributes:['id']
                     }
@@ -198,13 +198,7 @@ module.exports = {
             function(userFound, done) {
                 if(userFound) {
                     userFound.update({
-                        bio: (bio ? bio : userFound.bio),
-                        type: (type ? type : userFound.type),
-                        adress: (adress ? adress : userFound.adress),
-                        phone: (phone ? phone : userFound.phone) ,
-                        num_ref: (num_ref ? num_ref : userFound.num_ref),
-                        num_id: (num_id ? num_id : userFound.num_id),
-                        specificite: (specificite ? specificite : userFound.specificite),
+                        bio: (bio ? bio : userFound.bio)
                     }).then(function() {
                         done(userFound);
                     }).catch(function(err) {

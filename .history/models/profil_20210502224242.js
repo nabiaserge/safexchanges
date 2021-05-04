@@ -11,8 +11,8 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      models.profil.belongsTo(models.compte_user);
-     models.compte_user.hasOne(models.profil);
+      models.profil.hasMany(models.compte_users);
+     models.compte_users.belongsTo(models.profil);
     }
   };
   profil.init({

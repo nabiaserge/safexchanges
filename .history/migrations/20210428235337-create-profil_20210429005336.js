@@ -8,14 +8,6 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      idCompt: {
-        allowNull: false,
-        type: Sequelize.INTEGER,
-        references: {
-            model: 'compte_user',
-            key: 'id'
-        }
-      },
       type: {
         type: Sequelize.STRING
       },
