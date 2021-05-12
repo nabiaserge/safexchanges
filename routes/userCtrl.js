@@ -4,7 +4,6 @@ var jwtUtils  = require('../utils/jwt.utils');
 var models    = require('../models');
 var asyncLib  = require('async');
 
-
 // Constants
 const EMAIL_REGEX     = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const PASSWORD_REGEX  = /^(?=.*\d).{4,12}$/;
@@ -14,9 +13,10 @@ module.exports = {
     register: function(req, res) {
 
         // Params
-        const login = req.body.matricule;
+        const login     = req.body.login;
         const email     = req.body.email;
         const password  = req.body.password;
+        const role      =req.body.role;
 
         if (login==='' || email===''  || password ==='') {
             return res.status(400).json({ 'error': 'missing parameters' });
@@ -44,50 +44,52 @@ module.exports = {
                         done(null, userFound);
                     })
                     .catch(function(err) {
-                        return res.status(500).json({ 'error': 'unable to verify matricule' });
+                        return res.status(500).json({ 'error': 'unable to verify email' });
                     });
             },
             function(userFound, done){
                 if (!userFound) {
                     bcrypt.hash(password, 5, function( err, bcryptedPassword ) {
-                        done(null, userFound, bcryptedPassword);
+                        done(null,bcryptedPassword);
                     });
-                } else {
+                    } 
+                else {
                     return res.status(409).json({ 'error': 'addresse email déjà utilisées'  });
-                }
+                    }
             },
             function(bcryptedPassword, done) {
                     models.compte_user.create({
                         login: login,
                         email: email,
                         password: bcryptedPassword,
-                })
-                    .then(function(newProfil) {
-                        done(null, newProfil);
+                        role: role
+                    })
+                    .then(function(createProfil) {
+                        done(null, createProfil);
                     })
                     .catch(function(err) {
                         return res.status(500).json({ 'error': 'cannot add user' });
                     });
             },
-            function(done) {
-                models.produit.create({
-                    idCompt: newUser.id
+            function(createProfil, done) {
+                models.profil.create({
+                idCompt: createProfil.id
+             })
+            .then(function(infoUser) {
+                done(infoUser);
             })
-                .then(function(newUser) {
-                    done(newUser);
-                })
-                .catch(function(err) {
-                    return res.status(500).json({ 'error': 'cannot add user' });
-                });
+            .catch(function(err) {
+                return res.status(500).json({ 'error': 'cannot initialize profil' });
+            });
         }
-        ], function(newUser) {
-            if (newUser) {
+        ], function(infoUser) {
+            if (infoUser) {
                 return res.status(201).json({
-                    'userId': newUser.id,
+                    'userId': infoUser.idCompt,
                     'email':email
                 });
             } else {
-                return res.status(500).json({ 'error': 'cannot add user' });
+                return res.status(500).json({ 'error': 'cannot get user Info' });
             }
         });
     },
@@ -107,7 +109,7 @@ module.exports = {
         asyncLib.waterfall([
             function(done) {
                 models.compte_user.findOne({
-                    attributes: ['email','password'],
+                    attributes: ['email','password','id'],
                     where: { email: email}
                 })
                     .then(function(userFound) {
@@ -151,11 +153,15 @@ module.exports = {
         var userId      = jwtUtils.getUserId(headerAuth);
 
         if (userId < 0)
-            return res.status(400).json({ 'error': 'wrong token' });
+            return res.status(400).json({ 'error': 'wrong token ' });
 
-        models.compte_user.findOne({
-            attributes: [ 'email', 'login'],
-            where: { id: userId }
+        models.profil.findOne({
+            attributes: ['id'],
+            where: { id: userId },
+            include: [{
+                model: models.compte_user('idCompt'),
+                attributes: [ 'id' ]
+              }]
         }).then(function(user) {
             if (user) {
                 res.status(201).json(user);
@@ -198,7 +204,6 @@ module.exports = {
             function(userFound, done) {
                 if(userFound) {
                     userFound.update({
-                        bio: (bio ? bio : userFound.bio),
                         type: (type ? type : userFound.type),
                         adress: (adress ? adress : userFound.adress),
                         phone: (phone ? phone : userFound.phone) ,
